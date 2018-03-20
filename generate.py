@@ -26,6 +26,9 @@ HEADERS = {
     'Member': ['姓','名','よみがな姓','よみがな名','メールアドレス'],
 }
 
+DEFAULT_FONT = 'IPA Gothic'
+DEFAULT_FONT_FILE = 'ipaexg.ttf'
+
 class DocTemplate(BaseDocTemplate):
     def __init__(self, filename, **kw):
         self.allowSplitting = 0
@@ -45,14 +48,14 @@ class CommentGenerator():
         self.comments = comments
 
         self.header_style = ParagraphStyle(
-            fontName='IPA Gothic',
+            fontName=DEFAULT_FONT,
             fontSize=10,
             name='comment_header',
             spaceAfter=6
         )
 
         self.body_style = ParagraphStyle(
-            fontName='IPA Gothic',
+            fontName=DEFAULT_FONT,
             fontSize=8,
             name='body',
             spaceAfter=4,
@@ -72,14 +75,14 @@ class BoardGenerator():
         self.boards = boards
 
         self.header_style = ParagraphStyle(
-            fontName='IPA Gothic',
+            fontName=DEFAULT_FONT,
             fontSize=12,
             name='header',
             spaceAfter=10
         )
 
         self.body_style = ParagraphStyle(
-            fontName='IPA Gothic',
+            fontName=DEFAULT_FONT,
             fontSize=8,
             name='body',
             spaceAfter=4,
@@ -105,14 +108,14 @@ class TodoGenerator():
         self.todos = todos 
 
         self.header_style = ParagraphStyle(
-            fontName='IPA Gothic',
+            fontName=DEFAULT_FONT,
             fontSize=12,
             name='header',
             spaceAfter=10
         )
 
         self.body_style = ParagraphStyle(
-            fontName='IPA Gothic',
+            fontName=DEFAULT_FONT,
             fontSize=8,
             name='body',
             spaceAfter=4,
@@ -139,7 +142,7 @@ class MemberGenerator():
         self.members = members
 
         self.body_style = ParagraphStyle(
-            fontName='IPA Gothic',
+            fontName=DEFAULT_FONT,
             fontSize=8,
             name='body',
             spaceAfter=4,
@@ -296,7 +299,7 @@ def read_csv(path):
     return (entities, class_name)
 
 def gen_pdf(generator, output, toc=True):
-    addMapping('IPA Gothic', 1, 1, 'IPA Gothic')
+    addMapping(DEFAULT_FONT, 1, 1, DEFAULT_FONT)
 
     story = []
 
@@ -304,7 +307,7 @@ def gen_pdf(generator, output, toc=True):
         toc = TableOfContents()
         toc.levelStyles = [
             ParagraphStyle(
-                fontName='IPA Gothic',
+                fontName=DEFAULT_FONT,
                 fontSize=8,
                 name='body',
                 spaceAfter=4,
@@ -318,7 +321,7 @@ def gen_pdf(generator, output, toc=True):
     story.extend(generator.convert())
 
     doc = DocTemplate(output)
-    pdfmetrics.registerFont(TTFont('IPA Gothic', './ipaexg.ttf'))
+    pdfmetrics.registerFont(TTFont(DEFAULT_FONT, DEFAULT_FONT_FILE))
     doc.multiBuild(story)
 
 def main(path, output):
