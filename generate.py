@@ -1,6 +1,7 @@
 #
 # References:
 #   https://symfoware.blog.fc2.com/blog-entry-768.html
+#   https://www.reportlab.com/snippets/8/
 #
 
 import sys
@@ -9,6 +10,7 @@ import csv
 import datetime
 from reportlab.pdfgen import canvas
 from reportlab.platypus.doctemplate import PageTemplate, BaseDocTemplate
+from reportlab.platypus.tableofcontents import TableOfContents
 from reportlab.platypus import Paragraph
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import PageBreak
@@ -16,12 +18,16 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus.frames import Frame
 from reportlab.lib.units import cm
+from reportlab.lib.fonts import addMapping
 
 HEADERS = {
     'Board': ['ID','タイトル','本文','作成者','作成日時','更新者','更新日時','コメント'],
     'Todo': ['ID','タイトル','本文','作成者','作成日時','更新者','更新日時','ステータス','優先度','担当者','期日','コメント'],
     'Member': ['姓','名','よみがな姓','よみがな名','メールアドレス'],
 }
+
+DEFAULT_FONT = 'IPA Gothic'
+DEFAULT_FONT_FILE = 'ipaexg.ttf'
 
 class DocTemplate(BaseDocTemplate):
     def __init__(self, filename, **kw):
@@ -30,19 +36,26 @@ class DocTemplate(BaseDocTemplate):
         template = PageTemplate('normal', [Frame(2.5*cm, 2.5*cm, 15*cm, 25*cm, id='F1')])
         self.addPageTemplates(template)
 
+    def afterFlowable(self, flowable):
+        if flowable.__class__.__name__ == 'Paragraph':
+            text = flowable.getPlainText()
+            style = flowable.style.name
+            if style == 'header':
+                self.notify('TOCEntry', (0, text, self.page))
+
 class CommentGenerator():
     def __init__(self, comments):
         self.comments = comments
 
         self.header_style = ParagraphStyle(
-            fontName='IPA Gothic',
+            fontName=DEFAULT_FONT,
             fontSize=10,
             name='comment_header',
             spaceAfter=6
         )
 
         self.body_style = ParagraphStyle(
-            fontName='IPA Gothic',
+            fontName=DEFAULT_FONT,
             fontSize=8,
             name='body',
             spaceAfter=4,
@@ -62,14 +75,14 @@ class BoardGenerator():
         self.boards = boards
 
         self.header_style = ParagraphStyle(
-            fontName='IPA Gothic',
+            fontName=DEFAULT_FONT,
             fontSize=12,
             name='header',
             spaceAfter=10
         )
 
         self.body_style = ParagraphStyle(
-            fontName='IPA Gothic',
+            fontName=DEFAULT_FONT,
             fontSize=8,
             name='body',
             spaceAfter=4,
@@ -95,14 +108,14 @@ class TodoGenerator():
         self.todos = todos 
 
         self.header_style = ParagraphStyle(
-            fontName='IPA Gothic',
+            fontName=DEFAULT_FONT,
             fontSize=12,
             name='header',
             spaceAfter=10
         )
 
         self.body_style = ParagraphStyle(
-            fontName='IPA Gothic',
+            fontName=DEFAULT_FONT,
             fontSize=8,
             name='body',
             spaceAfter=4,
@@ -129,7 +142,7 @@ class MemberGenerator():
         self.members = members
 
         self.body_style = ParagraphStyle(
-            fontName='IPA Gothic',
+            fontName=DEFAULT_FONT,
             fontSize=8,
             name='body',
             spaceAfter=4,
@@ -285,10 +298,31 @@ def read_csv(path):
             entities.append(entity)
     return (entities, class_name)
 
-def gen_pdf(generator, output):
+def gen_pdf(generator, output, toc=True):
+    addMapping(DEFAULT_FONT, 1, 1, DEFAULT_FONT)
+
+    story = []
+
+    if toc:
+        toc = TableOfContents()
+        toc.levelStyles = [
+            ParagraphStyle(
+                fontName=DEFAULT_FONT,
+                fontSize=8,
+                name='body',
+                spaceAfter=4,
+                justifyBreaks=1
+            )
+        ]
+
+        story.append(toc)
+        story.append(PageBreak())
+
+    story.extend(generator.convert())
+
     doc = DocTemplate(output)
-    pdfmetrics.registerFont(TTFont('IPA Gothic', './ipaexg.ttf'))
-    doc.multiBuild(generator.convert())
+    pdfmetrics.registerFont(TTFont(DEFAULT_FONT, DEFAULT_FONT_FILE))
+    doc.multiBuild(story)
 
 def main(path, output):
     (entities, class_name) = read_csv(path)
