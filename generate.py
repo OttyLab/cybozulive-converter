@@ -164,7 +164,7 @@ class Comment():
     def __init__(self, index, submitter, dt, body):
         self.index = index
         self.submitter = submitter
-        self.dt = datetime.datetime.strptime(dt, '%Y/%m/%d %H:%M')
+        self.dt = dt
         self.body = body
 
     def __str__(self):
@@ -190,12 +190,12 @@ class Comment():
             if marker and m:
                 index = m.group(1)
                 submitter = m.group(2)
-                year = m.group(3)
-                month = m.group(4)
-                date = m.group(5)
-                hour = m.group(7)
+                year = int(m.group(3))
+                month = int(m.group(4))
+                date = int(m.group(5))
+                hour = int(m.group(7))
                 minute = int(m.group(8))
-                dt = '{}/{}/{} {}:{}'.format(year, month, date, hour, minute)
+                dt = datetime.datetime(year, month, date, hour, minute)
 
                 if next_comment:
                     next_comment.body = '<br />\n'.join(body[1:-1])
@@ -225,9 +225,9 @@ class Board():
         self.title = title
         self.body = body
         self.creator = creator
-        self.create_time = create_time
+        self.create_time = datetime.datetime.strptime(create_time, '%Y/%m/%d %H:%M')
         self.updator = updator
-        self.update_time = update_time
+        self.update_time = datetime.datetime.strptime(update_time, '%Y/%m/%d %H:%M')
         self.comments = Comment.parse(comments)
 
     def __str__(self):
@@ -245,9 +245,9 @@ class Todo():
         self.title = title
         self.body = body
         self.creator = creator
-        self.create_time = create_time
+        self.create_time = datetime.datetime.strptime(create_time, '%Y/%m/%d %H:%M')
         self.updator = updator
-        self.update_time = update_time
+        self.update_time = datetime.datetime.strptime(update_time, '%Y/%m/%d %H:%M')
         self.status = status
         self.priority = priority
         self.pic = pic
