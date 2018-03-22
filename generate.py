@@ -225,9 +225,9 @@ class Board():
         self.title = title
         self.body = body
         self.creator = creator
-        self.create_time = create_time
+        self.create_time = datetime.datetime.strptime(create_time, '%Y/%m/%d %H:%M')
         self.updator = updator
-        self.update_time = update_time
+        self.update_time = datetime.datetime.strptime(update_time, '%Y/%m/%d %H:%M')
         self.comments = Comment.parse(comments)
 
     def __str__(self):
@@ -245,9 +245,9 @@ class Todo():
         self.title = title
         self.body = body
         self.creator = creator
-        self.create_time = create_time
+        self.create_time = datetime.datetime.strptime(create_time, '%Y/%m/%d %H:%M')
         self.updator = updator
-        self.update_time = update_time
+        self.update_time = datetime.datetime.strptime(update_time, '%Y/%m/%d %H:%M')
         self.status = status
         self.priority = priority
         self.pic = pic
