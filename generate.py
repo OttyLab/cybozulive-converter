@@ -8,6 +8,7 @@ import sys
 import re
 import csv
 import datetime
+import argparse
 from reportlab.pdfgen import canvas
 from reportlab.platypus.doctemplate import PageTemplate, BaseDocTemplate
 from reportlab.platypus.tableofcontents import TableOfContents
@@ -283,7 +284,7 @@ def analyze(header):
         print('Unsupported CSV')
         sys.exit(1)
 
-def read_csv(path):
+def read_csv(path, from_date=None, to_date=None):
     entities = []
     with open(path, encoding='utf-8') as f:
         reader = csv.reader(f)
@@ -295,6 +296,14 @@ def read_csv(path):
                 continue
 
             entity = globals()[class_name](*row)
+            try:
+                if from_date and entity.create_time < from_date:
+                    continue
+                elif to_date and entity.create_time > to_date:
+                    continue
+            except AttributeError:
+                pass
+
             entities.append(entity)
     return (entities, class_name)
 
@@ -324,18 +333,30 @@ def gen_pdf(generator, output, toc=True):
     pdfmetrics.registerFont(TTFont(DEFAULT_FONT, DEFAULT_FONT_FILE))
     doc.multiBuild(story)
 
-def main(path, output):
-    (entities, class_name) = read_csv(path)
+def main(path, output, from_date=None, to_date=None):
+    (entities, class_name) = read_csv(path, from_date, to_date)
     generator = globals()[class_name + 'Generator'](entities) #TODO: converter name mapping
     gen_pdf(generator, output)
 
-def usage():
-    print('board.py [csv file name] [output file name]')
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        usage()
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('csv', help='input csv file path')
+    parser.add_argument('pdf', help='output pdf file name')
+    parser.add_argument('-f', '--from-date', action='store', metavar='yyyy/mm/dd', help='')
+    parser.add_argument('-t', '--to-date', action='store', metavar='yyyy/mm/dd', help='')
+    args = parser.parse_args()
+
+    from_date = None
+    to_date = None
+    try:
+        if args.from_date:
+            from_date = datetime.datetime.strptime(args.from_date, '%Y/%m/%d')
+        if args.to_date:
+            to_date = datetime.datetime.strptime(args.to_date, '%Y/%m/%d')
+    except ValueError:
+        print(f'invalud date format')
         sys.exit(1)
 
-    main(sys.argv[1], sys.argv[2])
+    main(args.csv, args.pdf, from_date, to_date)
     sys.exit(0)
