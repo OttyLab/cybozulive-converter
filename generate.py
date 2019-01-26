@@ -42,7 +42,7 @@ class DocTemplate(BaseDocTemplate):
             text = flowable.getPlainText()
             style = flowable.style.name
             if style == 'header':
-                self.notify('TOCEntry', (0, text, self.page))
+                self.notify('TOCEntry', (0, text, self.page, flowable._bookmark))
 
 class CommentGenerator():
     def __init__(self, comments):
@@ -91,13 +91,17 @@ class BoardGenerator():
         )
 
     def convert(self):
+        import xxhash
         story = []
         for board in self.boards:
             title = '{} [{}]'.format(board.title, board.id)
             creator = '{} ({})'.format(board.creator, board.create_time)
-            header = '{} / {}'.format(title, creator)
+            digest = xxhash.xxh32_hexdigest(title)
+            header = '{} / {} <a name={} />'.format(title, creator, digest)
 
-            story.append(Paragraph(header, self.header_style))
+            hp = Paragraph(header, self.header_style)
+            hp._bookmark = digest
+            story.append(hp)
             story.append(Paragraph(board.body, self.body_style))
             story.extend(CommentGenerator(board.comments).convert())
             story.append(PageBreak())
@@ -124,14 +128,18 @@ class TodoGenerator():
         )
 
     def convert(self):
+        import xxhash
         story = []
         for todo in self.todos:
             title = '{} [{}]'.format(todo.title, todo.id)
             creator = '{} ({})'.format(todo.creator, todo.create_time)
             status = '{}, {}, {}, {}'.format(todo.status, todo.priority, todo.pic, todo.due)
-            header = '{} / {} / {}'.format(title, creator, status)
+            digest = xxhash.xxh32_hexdigest(title)
+            header = '{} / {} / {} <a name={} />'.format(title, creator, status, digest)
 
-            story.append(Paragraph(header, self.header_style))
+            hp = Paragraph(header, self.header_style)
+            hp._bookmark = digest
+            story.append(hp)
             story.append(Paragraph(todo.body, self.body_style))
             story.extend(CommentGenerator(todo.comments).convert())
             story.append(PageBreak())
