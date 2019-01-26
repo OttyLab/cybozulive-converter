@@ -331,6 +331,8 @@ def read_csv(path, from_date=None, to_date=None):
                 pass
 
             entities.append(entity)
+
+    entities.sort(key=lambda x: x.create_time, reverse=True)
     return (entities, class_name)
 
 def gen_pdf(generator, output, toc=True):
