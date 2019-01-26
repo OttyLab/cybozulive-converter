@@ -90,6 +90,9 @@ class BoardGenerator():
             justifyBreaks=1
         )
 
+    def does_support_toc(self):
+        return True
+
     def convert(self):
         import xxhash
         story = []
@@ -127,6 +130,9 @@ class TodoGenerator():
             justifyBreaks=1
         )
 
+    def does_support_toc(self):
+        return True
+
     def convert(self):
         import xxhash
         story = []
@@ -157,6 +163,9 @@ class MemberGenerator():
             spaceAfter=4,
             justifyBreaks=1
         )
+
+    def does_support_toc(self):
+        return False
 
     def convert(self):
         story = []
@@ -344,7 +353,7 @@ def gen_pdf(generator, output, toc=True):
 def main(path, output, from_date=None, to_date=None):
     (entities, class_name) = read_csv(path, from_date, to_date)
     generator = globals()[class_name + 'Generator'](entities) #TODO: converter name mapping
-    gen_pdf(generator, output)
+    gen_pdf(generator, output, generator.does_support_toc())
 
 
 if __name__ == '__main__':
