@@ -20,6 +20,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus.frames import Frame
 from reportlab.lib.units import cm
 from reportlab.lib.fonts import addMapping
+from reportlab.lib.colors import Color
 
 HEADERS = {
     'Board': ['ID','タイトル','本文','作成者','作成日時','更新者','更新日時','コメント'],
@@ -79,7 +80,10 @@ class BoardGenerator():
             fontName=DEFAULT_FONT,
             fontSize=12,
             name='header',
-            spaceAfter=10
+            spaceAfter=10,
+            borderColor=Color(0, 0, 0, 1),
+            borderPadding=3,
+            borderWidth=1,
         )
 
         self.body_style = ParagraphStyle(
@@ -87,7 +91,8 @@ class BoardGenerator():
             fontSize=8,
             name='body',
             spaceAfter=4,
-            justifyBreaks=1
+            justifyBreaks=1,
+            backColor=Color(0, 0, 0, 0.1),
         )
 
     def does_support_toc(self):
@@ -119,7 +124,10 @@ class TodoGenerator():
             fontName=DEFAULT_FONT,
             fontSize=12,
             name='header',
-            spaceAfter=10
+            spaceAfter=10,
+            borderColor=Color(0, 0, 0, 1),
+            borderPadding=3,
+            borderWidth=1,
         )
 
         self.body_style = ParagraphStyle(
@@ -127,7 +135,8 @@ class TodoGenerator():
             fontSize=8,
             name='body',
             spaceAfter=4,
-            justifyBreaks=1
+            justifyBreaks=1,
+            backColor=Color(0, 0, 0, 0.1),
         )
 
     def does_support_toc(self):
@@ -330,6 +339,14 @@ def gen_pdf(generator, output, toc=True):
     story = []
 
     if toc:
+        title_style = ParagraphStyle(
+            fontName=DEFAULT_FONT,
+            fontSize=15,
+            name='TOC',
+            spaceAfter=10
+        )
+        story.append(Paragraph('目次', title_style))
+
         toc = TableOfContents()
         toc.levelStyles = [
             ParagraphStyle(
