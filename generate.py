@@ -224,7 +224,7 @@ class Board():
         ):
         self.id = id
         self.title = title
-        self.body = body
+        self.body = body.replace('\n', '<br />\n')
         self.creator = creator
         self.create_time = datetime.datetime.strptime(create_time, '%Y/%m/%d %H:%M')
         self.updator = updator
