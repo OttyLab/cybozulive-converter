@@ -20,6 +20,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus.frames import Frame
 from reportlab.lib.units import cm
 from reportlab.lib.fonts import addMapping
+from reportlab.lib.colors import Color
 
 HEADERS = {
     'Board': ['ID','タイトル','本文','作成者','作成日時','更新者','更新日時','コメント'],
@@ -42,7 +43,7 @@ class DocTemplate(BaseDocTemplate):
             text = flowable.getPlainText()
             style = flowable.style.name
             if style == 'header':
-                self.notify('TOCEntry', (0, text, self.page))
+                self.notify('TOCEntry', (0, text, self.page, flowable._bookmark))
 
 class CommentGenerator():
     def __init__(self, comments):
@@ -79,7 +80,10 @@ class BoardGenerator():
             fontName=DEFAULT_FONT,
             fontSize=12,
             name='header',
-            spaceAfter=10
+            spaceAfter=10,
+            borderColor=Color(0, 0, 0, 1),
+            borderPadding=3,
+            borderWidth=1,
         )
 
         self.body_style = ParagraphStyle(
@@ -87,17 +91,25 @@ class BoardGenerator():
             fontSize=8,
             name='body',
             spaceAfter=4,
-            justifyBreaks=1
+            justifyBreaks=1,
+            backColor=Color(0, 0, 0, 0.1),
         )
 
+    def does_support_toc(self):
+        return True
+
     def convert(self):
+        import xxhash
         story = []
         for board in self.boards:
             title = '{} [{}]'.format(board.title, board.id)
             creator = '{} ({})'.format(board.creator, board.create_time)
-            header = '{} / {}'.format(title, creator)
+            digest = xxhash.xxh32_hexdigest(title)
+            header = '{} / {} <a name={} />'.format(title, creator, digest)
 
-            story.append(Paragraph(header, self.header_style))
+            hp = Paragraph(header, self.header_style)
+            hp._bookmark = digest
+            story.append(hp)
             story.append(Paragraph(board.body, self.body_style))
             story.extend(CommentGenerator(board.comments).convert())
             story.append(PageBreak())
@@ -112,7 +124,10 @@ class TodoGenerator():
             fontName=DEFAULT_FONT,
             fontSize=12,
             name='header',
-            spaceAfter=10
+            spaceAfter=10,
+            borderColor=Color(0, 0, 0, 1),
+            borderPadding=3,
+            borderWidth=1,
         )
 
         self.body_style = ParagraphStyle(
@@ -120,18 +135,26 @@ class TodoGenerator():
             fontSize=8,
             name='body',
             spaceAfter=4,
-            justifyBreaks=1
+            justifyBreaks=1,
+            backColor=Color(0, 0, 0, 0.1),
         )
 
+    def does_support_toc(self):
+        return True
+
     def convert(self):
+        import xxhash
         story = []
         for todo in self.todos:
             title = '{} [{}]'.format(todo.title, todo.id)
             creator = '{} ({})'.format(todo.creator, todo.create_time)
             status = '{}, {}, {}, {}'.format(todo.status, todo.priority, todo.pic, todo.due)
-            header = '{} / {} / {}'.format(title, creator, status)
+            digest = xxhash.xxh32_hexdigest(title)
+            header = '{} / {} / {} <a name={} />'.format(title, creator, status, digest)
 
-            story.append(Paragraph(header, self.header_style))
+            hp = Paragraph(header, self.header_style)
+            hp._bookmark = digest
+            story.append(hp)
             story.append(Paragraph(todo.body, self.body_style))
             story.extend(CommentGenerator(todo.comments).convert())
             story.append(PageBreak())
@@ -149,6 +172,9 @@ class MemberGenerator():
             spaceAfter=4,
             justifyBreaks=1
         )
+
+    def does_support_toc(self):
+        return False
 
     def convert(self):
         story = []
@@ -224,7 +250,7 @@ class Board():
         ):
         self.id = id
         self.title = title
-        self.body = body
+        self.body = body.replace('\n', '<br />\n')
         self.creator = creator
         self.create_time = datetime.datetime.strptime(create_time, '%Y/%m/%d %H:%M')
         self.updator = updator
@@ -305,6 +331,8 @@ def read_csv(path, from_date=None, to_date=None):
                 pass
 
             entities.append(entity)
+
+    entities.sort(key=lambda x: x.create_time, reverse=True)
     return (entities, class_name)
 
 def gen_pdf(generator, output, toc=True):
@@ -313,6 +341,14 @@ def gen_pdf(generator, output, toc=True):
     story = []
 
     if toc:
+        title_style = ParagraphStyle(
+            fontName=DEFAULT_FONT,
+            fontSize=15,
+            name='TOC',
+            spaceAfter=10
+        )
+        story.append(Paragraph('目次', title_style))
+
         toc = TableOfContents()
         toc.levelStyles = [
             ParagraphStyle(
@@ -336,7 +372,7 @@ def gen_pdf(generator, output, toc=True):
 def main(path, output, from_date=None, to_date=None):
     (entities, class_name) = read_csv(path, from_date, to_date)
     generator = globals()[class_name + 'Generator'](entities) #TODO: converter name mapping
-    gen_pdf(generator, output)
+    gen_pdf(generator, output, generator.does_support_toc())
 
 
 if __name__ == '__main__':
